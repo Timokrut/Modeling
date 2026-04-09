@@ -2,10 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 from scipy.special import erf, erfinv
+import math
 
 np.random.seed(52)
-
-# === SOME FUNCTIONS===
 
 # Теоретические функции
 # PDF: f(x) = λ·e^(-λx), x ≥ 0 - функция плотности вероятности
@@ -30,8 +29,6 @@ def norm_cdf(x, mean, std):
     return 0.5 * (1 + erf((x - mean) / (std * np.sqrt(2))))
 
 
-# ===Генераторы СВ===
-
 # генератор экспоненциальных СВ методом обр функций
 def generate_exponential_inverse(lambda_param, n):
     U = np.random.uniform(0, 1, n)
@@ -39,9 +36,6 @@ def generate_exponential_inverse(lambda_param, n):
     return X * 1000  # переводим в миллисекунды
 
 def generate_normal_marsalia(m, sigma, n):
-    if n % 2 == 1:
-        n += 1
-
     result = np.empty(n)
     i = 0
 
@@ -70,30 +64,21 @@ def generate_normal_marsalia(m, sigma, n):
 
 # Статистический анализ
 def calculate_stats(data, name, theoretical_mean=None, theoretical_var=None):
-    """Расчёт и вывод статистик"""
     emp_mean = np.mean(data)
     emp_var = np.var(data, ddof=1)
     emp_std = np.std(data, ddof=1)
 
     print(f"{name}:")
-    print(f"  Выборочное среднее: {emp_mean:.4f}")
-    print(f"  Выборочная дисперсия: {emp_var:.4f}")
-    print(f"  Выборочное σ: {emp_std:.4f}")
+    print(f"Выборочная дисперсия: {emp_var:.4f}")
+    print(f"Выборочное σ: {emp_std:.4f}")
+    print(f"Выборочное среднее: {emp_mean:.4f}")
 
-    if theoretical_mean is not None:
-        print(f"  Теоретическое среднее: {theoretical_mean:.4f}")
-        print(f"  Отклонение среднего: {abs(emp_mean - theoretical_mean) / theoretical_mean * 100:.2f}%")
-    if theoretical_var is not None:
-        print(f"  Теоретическая дисперсия: {theoretical_var:.4f}")
-        print(f"  Отклонение дисперсии: {abs(emp_var - theoretical_var) / theoretical_var * 100:.2f}%")
-    print()
-
-    return emp_mean, emp_var
+    print(f"Теоретическое среднее: {theoretical_mean:.4f}")
+    print(f"Теоретическая дисперсия: {theoretical_var:.4f}")
+    print(f"Теоретическая σ: {math.sqrt(theoretical_var):.4f}")
 
 # Построение графиков плотности вероятности и функции распределения
 def plot_density_and_cdf(data, name, theoretical_pdf, theoretical_cdf, x_range, bins=30):
-    """Построение плотности и функции распределения"""
-
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
     # Плотность вероятности w(x)
@@ -103,7 +88,7 @@ def plot_density_and_cdf(data, name, theoretical_pdf, theoretical_cdf, x_range, 
     ax1.plot(x_theor, theoretical_pdf(x_theor), 'r-', linewidth=2, label='Теоретическая')
     ax1.set_xlabel('x')
     ax1.set_ylabel('w(x)')
-    ax1.set_title(f'Плотность вероятности - {name}')
+    ax1.set_title(f'{name} плотность вероятности')
     ax1.legend()
     ax1.grid(True, alpha=0.3)
 
@@ -115,7 +100,7 @@ def plot_density_and_cdf(data, name, theoretical_pdf, theoretical_cdf, x_range, 
     ax2.plot(x_theor, theoretical_cdf(x_theor), 'r-', linewidth=2, label='Теоретическая')
     ax2.set_xlabel('x')
     ax2.set_ylabel('F(x)')
-    ax2.set_title(f'Функция распределения - {name}')
+    ax2.set_title(f'{name} функция распределения')
     ax2.legend()
     ax2.grid(True, alpha=0.3)
 
@@ -123,19 +108,16 @@ def plot_density_and_cdf(data, name, theoretical_pdf, theoretical_cdf, x_range, 
     plt.savefig(f'{name}_distribution.png', dpi=300)
     plt.show()
 
-#QQ-plot
 def qq_plot_custom(data, name, x_label):
-    """QQ-plot с собственными теоретическими квантилями"""
-
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
     # QQ-plot со встроенной функцией
     ax1 = axes[0]
-    dist_mapping = {"Exponential": "expon", "Normal": "norm"}
+    dist_mapping = {"Экспоненциальная": "expon", "Нормальная": "norm"}
     dist_name = dist_mapping.get(name, name.lower())
 
     stats.probplot(data, dist=dist_name, plot=ax1)
-    ax1.set_title(f'QQ-plot ({name}) - встроенная функция')
+    ax1.set_title(f'{name} QQ-plot: встроенная функция')
     ax1.grid(True, alpha=0.3)
 
     # QQ-plot с собственной функцией
@@ -144,7 +126,7 @@ def qq_plot_custom(data, name, x_label):
     data_sorted = np.sort(data)
     p_empirical = (np.arange(1, n + 1) - 0.5) / n
 
-    if name == "Exponential":
+    if name == "Экспоненциальная":
         q_theoretical = -np.log(1 - p_empirical) / lambda_exp * 1000
     else:
         q_theoretical = m_norm + sigma_norm * np.sqrt(2) * erfinv(2 * p_empirical - 1)
@@ -155,7 +137,7 @@ def qq_plot_custom(data, name, x_label):
              'r--', linewidth=2, label='y=x')
     ax2.set_xlabel('Теоретические квантили')
     ax2.set_ylabel('Эмпирические квантили')
-    ax2.set_title(f'QQ-plot ({name}) - собственная функция')
+    ax2.set_title(f'{name} QQ-plot: собственная функция')
     ax2.legend()
     ax2.grid(True, alpha=0.3)
 
@@ -165,7 +147,6 @@ def qq_plot_custom(data, name, x_label):
 
 # Моделирование работы шлюза
 def simulate_gateway(arrival_times, processing_times, T_seconds):
-    """Моделирование работы VoIP-шлюза"""
     T_ms = T_seconds * 1000
     arrival_moments = np.cumsum(arrival_times)
 
@@ -178,8 +159,7 @@ def simulate_gateway(arrival_times, processing_times, T_seconds):
     end_time = 0
 
     for i in range(n_packets):
-        # Защита от отрицательного времени обработки
-        service_time = max(0, processing_times[i])
+        service_time = max(0, processing_times[i]) # чтобы небыло отриц
 
         start_time = max(arrival_moments[i], end_time)
         delays[i] = start_time - arrival_moments[i]
@@ -199,17 +179,6 @@ if __name__ == "__main__":
     n_samples = 10000
     T_sim = 10
     delay_threshold = 80
-
-    # Проверка загрузки системы
-    rho = lambda_exp * m_norm / 1000  # коэффициент использования
-
-    print(f"λ (экспоненциальное) = {lambda_exp} пакетов/сек")
-    print(f"m (нормальное) = {m_norm} мс")
-    print(f"σ (нормальное) = {sigma_norm} мс")
-    print(f"Загрузка системы ρ = λ×m/1000 = {rho:.3f} {' стабильна' if rho < 1 else ' перегрузка!'}")
-    print(f"Время моделирования: {T_sim} сек")
-    print(f"Порог задержки: {delay_threshold} мс")
-
         
     # Генерация данных
     X = generate_exponential_inverse(lambda_exp, n_samples)
@@ -224,66 +193,51 @@ if __name__ == "__main__":
     E_Y_theor = m_norm
     D_Y_theor = sigma_norm ** 2
 
-    print("=== Статические характеристки ===\n")
     calculate_stats(X, "X (экспоненциальное, мс)", E_X_theor_ms, D_X_theor_ms2)
     calculate_stats(Y, "Y (нормальное, мс)", E_Y_theor, D_Y_theor)
 
-    print("Построение графиков распределений")
-    plot_density_and_cdf(X, "Exponential",
+    plot_density_and_cdf(X, "Экспоненциальная",
                         lambda x: exp_pdf(x, lambda_exp),
                         lambda x: exp_cdf(x, lambda_exp),
                         x_range=(0, np.percentile(X, 99)), bins=30)
 
-    plot_density_and_cdf(Y, "Normal",
+    plot_density_and_cdf(Y, "Нормальная",
                         lambda x: norm_pdf(x, m_norm, sigma_norm),
                         lambda x: norm_cdf(x, m_norm, sigma_norm),
                         x_range=(m_norm - 4 * sigma_norm, m_norm + 4 * sigma_norm), bins=30)
 
-    print("Построение QQ-плотов")
-    qq_plot_custom(X, "Exponential", "Теоретические квантили (эксп.)")
-    qq_plot_custom(Y, "Normal", "Теоретические квантили (норм.)")
+    qq_plot_custom(X, "Экспоненциальная", "Теоретические квантили (эксп.)")
+    qq_plot_custom(Y, "Нормальная", "Теоретические квантили (норм.)")
 
-    print("\n=== Моделирования работ шлюза ===")
+    print()
     delays = simulate_gateway(X, Y, T_sim)
-    print(f"  Обработано пакетов за {T_sim} сек: {len(delays)}")
+    print(f"Обработано пакетов за {T_sim} сек: {len(delays)}")
 
-    #Пункт 4: доля пакетов с задержкой более 80 мс
+    # доля пакетов с задержкой более 80 мс
     delayed_mask = delays > delay_threshold
     delayed_count = np.sum(delayed_mask)
-    delayed_fraction = delayed_count / len(delays) * 100 if len(delays) > 0 else 0
+    delayed_fraction = delayed_count / len(delays) * 100
 
-    print(f"\n=== Результат пункта 4 ===")
     print(f"Пакетов с задержкой > {delay_threshold} мс: {delayed_count} из {len(delays)}")
     print(f"Доля пакетов с задержкой > {delay_threshold} мс: {delayed_fraction:.2f}%")
 
-    print(f"\nСтатистика задержек в очереди:")
-    if len(delays) > 0:
-        print(f"  Среднее: {np.mean(delays):.3f} мс")
-        print(f"  Медиана: {np.median(delays):.3f} мс")
-        print(f"  Максимум: {np.max(delays):.3f} мс")
-        print(f"  95-й перцентиль: {np.percentile(delays, 95):.3f} мс")
-    print()
-
     # Изменение параметра
-    print("=== Пункт 5: Анализ чувствительности ===\n")
-
-    # Вариант А: Увеличение интенсивности
-    print("Вариант А: Увеличение интенсивности λ на 50%")
+    # Увеличение интенсивности(lambda) на 50%
     lambda_exp_new = lambda_exp * 1.5
     X_new = generate_exponential_inverse(lambda_exp_new, n_samples)
     delays_new = simulate_gateway(X_new, Y, T_sim)
     delayed_fraction_new = np.sum(delays_new > delay_threshold) / len(delays_new) * 100 if len(delays_new) > 0 else 0
-    print(f"  Новая доля задержек > {delay_threshold} мс: {delayed_fraction_new:.2f}%")
-    print(f"  Изменение: {delayed_fraction_new - delayed_fraction:+.2f} п.п.\n")
+    
+    print("λ+50%")
+    print(f"Новая доля задержек > {delay_threshold} мс: {delayed_fraction_new:.2f}%")
 
-    # Вариант Б: Увеличение времени обработки
-    print("Вариант Б: Увеличение среднего времени обработки m на 20%")
+    # Увеличение среднего времени обработки
     m_norm_new = m_norm * 1.2
     Y_new = generate_normal_marsalia(m_norm_new, sigma_norm, n_samples)
     delays_new2 = simulate_gateway(X, Y_new, T_sim)
     delayed_fraction_new2 = np.sum(delays_new2 > delay_threshold) / len(delays_new2) * 100 if len(delays_new2) > 0 else 0
-    print(f"  Новая доля задержек > {delay_threshold} мс: {delayed_fraction_new2:.2f}%")
-    print(f"  Изменение: {delayed_fraction_new2 - delayed_fraction:+.2f} п.п.\n")
+    print("m+20%")
+    print(f"Новая доля задержек > {delay_threshold} мс: {delayed_fraction_new2:.2f}%")
 
     # Визуализация сравнения
     plt.figure(figsize=(10, 6))
@@ -299,15 +253,3 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.savefig('delay_comparison.png', dpi=300)
     plt.show()
-
-    print("Выводы \n")
-    print(f"1. Исходные параметры: λ={lambda_exp}, m={m_norm} мс, σ={sigma_norm} мс")
-    print(f"   → Доля задержек > {delay_threshold} мс: {delayed_fraction:.2f}%\n")
-    print(f"2. При λ → {lambda_exp_new:.0f} (+50%):")
-    print(f"   → Доля задержек: {delayed_fraction_new:.2f}% ({delayed_fraction_new - delayed_fraction:+.2f} п.п.)\n")
-    print(f"3. При m → {m_norm_new:.1f} мс (+20%):")
-    print(f"   → Доля задержек: {delayed_fraction_new2:.2f}% ({delayed_fraction_new2 - delayed_fraction:+.2f} п.п.)\n")
-    print("4. Генераторы работают корректно:")
-    print("    Экспоненциальное: метод обратных функций")
-    print("    Нормальное: метод Марсалья")
-    print("    QQ-плоты подтверждают соответствие распределениям")
